@@ -1,0 +1,10 @@
+.page-option {
+  display: flex;
+  flex-wrap: wrap;
+}
+.pagination {
+  flex-wrap: wrap;
+  .page-item {
+    margin-bottom: 15px;
+  }
+}

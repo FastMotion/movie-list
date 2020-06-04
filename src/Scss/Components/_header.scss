@@ -1,0 +1,35 @@
+@import '../vars';
+.container{
+  max-width: 1170px;
+  padding: 0 30px;
+  width: 100%;
+  margin: 0 auto;
+}
+.header {
+  &__inner{
+    padding: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  &__logo {
+    justify-content: flex-start;
+    align-items: center;
+  }
+  &__img {
+    text-decoration: none;
+    color: #000000;
+  }
+  &__link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  &__item {
+    text-align: center;
+    margin-right: 30px;
+    text-decoration: none;
+    color: #000000;
+    font-family: $font-family;
+  }
+}
