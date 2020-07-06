@@ -1,86 +1,81 @@
-import React from 'react'
+import React,{useState, useEffect} from 'react'
 import MovieItem from './MovieItem'
 import MovieTabs from './MovieTabs'
 import {API_URL,API_KEY_3,API_KEY_4} from '../../utils/api'
 
 
-class Main extends React.Component {
 
-  state = {
-    movies: [],
-    moviesWillWatch: [],
-    sort_by: 'vote_count.desc',
-    pageSize: 20,
-    totalCount: 0,
-    currentPage:1
+
+function useMoviesWillWatch () {
+
+    const [moviesWillWatch, setMoviesWillWatch] = useState([])
+    const addMoviesWillWatch = (movie) => {
+        const updateMoviesWillWatch = [...moviesWillWatch, movie]
+        setMoviesWillWatch(updateMoviesWillWatch)
+    }
+
+    const deleteMoviesWillWatch = (movie) => {
+        const updateMoviesWillWatch = moviesWillWatch.filter( movies => {
+            return movies.id !== movie.id })
+        setMoviesWillWatch(updateMoviesWillWatch )
+    }
+    return {
+      moviesWillWatch,
+      deleteMoviesWillWatch,
+      addMoviesWillWatch
+    }
+}
+
+function useMovies() {
+    const [movies, setMovies] = useState([])
+    const [totalCount, setTotalCount] = useState(0)
+    const getMovies = ({sort_by, currentPage, totalCount }) => {
+        fetch(`${API_URL}/discover/movie?api_key=${API_KEY_3}&sort_by=${sort_by}&page=${currentPage}&total_pages=${totalCount}`)
+            .then((resp)=>{
+                return resp.json()})
+            .then((data)=> {
+                setMovies(data.results)
+                setTotalCount(data.total_pages)
+            })
+    }
+
+    const deleteMovies = (movie) => {
+        const updateMovies = movies.filter( movies => movies.id !== movie.id )
+        setMovies(updateMovies)
+    }
+    return {movies, deleteMovies, getMovies,totalCount}
+}
+
+
+function Main () {
+
+  const {movies,deleteMovies,getMovies,totalCount} = useMovies()
+  const {moviesWillWatch, deleteMoviesWillWatch, addMoviesWillWatch}=useMoviesWillWatch()
+  const [sort_by, setSort_by] = useState('vote_count.desc')
+  const [pageSize, setPageSize] = useState(20)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    getMovies({sort_by})
+  }, [sort_by])
+
+  const updateSortBy = (value) => {
+      setSort_by(value)
   }
 
-  componentDidMount(){
-    this.getMovies()
-  }
-
-  componentDidUpdate(prevProps,prevState) {
-    if (prevState.sort_by !== this.state.sort_by) {
-      this.getMovies()
+  const onPageChanged =(page) => {
+    if (currentPage !== page){
+      setCurrentPage(page)
+        getMovies({sort_by, currentPage, totalCount})
     }
   }
 
-  getMovies = () => {
-     fetch(`${API_URL}/discover/movie?api_key=${API_KEY_3}&sort_by=${this.state.sort_by}&page=${this.state.currentPage}&total_pages=${this.state.totalCount}`)
-       .then((resp)=>{
-         return resp.json()})
-       .then((data)=> {
-         this.setState({movies: data.results})
-         this.setState({totalCount: data.total_pages})
-       })
-   }
-
-
-  addMoviesWillWatch = (movie) => {
-    const updateMoviesWillWatch = [...this.state.moviesWillWatch, movie]
-    this.setState({moviesWillWatch: updateMoviesWillWatch})
-  }
-
-  deleteMoviesWillWatch = (movie) => {
-    const updateMoviesWillWatch = this.state.moviesWillWatch.filter( movies => {
-      return movies.id !== movie.id })
-    this.setState({ moviesWillWatch: updateMoviesWillWatch })
-  }
-
-  deleteMovies = (movie) => {
-    const updateMovies = this.state.movies.filter( movies => {
-      return movies.id !== movie.id })
-    this.setState({ movies: updateMovies })
-  }
-
-  updateSortBy = (value) => {
-    this.setState({
-      sort_by:value
-    })
-  }
-
-  onPageChanged =(page) => {
-    if (this.state.currentPage !== page){
-      this.setState({currentPage: page})
-      fetch(`${API_URL}/discover/movie?api_key=${API_KEY_3}&sort_by=${this.state.sort_by}&page=${this.state.currentPage}&total_pages=${this.state.totalCount}`)
-      .then((resp)=>{
-        return resp.json()})
-      .then((data)=> {
-        this.setState({movies: data.results})
-      })
-    }
-    console.log('page',page)
-    console.log('data', this.state.movies)
-  }
-
-
-  render() {
-    let {totalCount,pageSize,sort_by,currentPage,movies,moviesWillWatch} = this.state
     let pagesCount = Math.ceil(totalCount/pageSize)
     let pages = [];
     for (let i = 1; i <= pagesCount; i++) {
       pages.push(i)
     }
+
     return (
       <div className='container'>
         <div className='row'>
@@ -89,7 +84,7 @@ class Main extends React.Component {
               <div className='col-12'>
                 <MovieTabs
                   sort_by = {sort_by}
-                  updateSortBy = {this.updateSortBy}
+                  updateSortBy = {updateSortBy}
                 />
               </div>
             </div>
@@ -99,7 +94,7 @@ class Main extends React.Component {
                  <li  className={`page-item active ${currentPage === 1? 'disabled': ''}`}>
                    <a className="page-link" href="#" >Previous</a>
                  </li>
-                 {pages.map((page)=> <li key={page} className={`page-item page-option ${currentPage === page? 'active': ''}`} onClick={() => this.onPageChanged(page)}><a href='#' className='page-link' >{page}</a></li> )}
+                 {pages.map((page)=> <li key={page} className={`page-item page-option ${currentPage === page? 'active': ''}`} onClick={() => onPageChanged(page)}><a href='#' className='page-link' >{page}</a></li> )}
                  <li className={`page-item active ${currentPage === pagesCount? 'disabled active': ''}`}>
                    <a className="page-link" href="#">Next</a>
                  </li>
@@ -112,9 +107,9 @@ class Main extends React.Component {
                 <div className='col-5 mb-4' key={movie.id}>
                   <MovieItem
                     movie={movie}
-                    deleteMovies={this.deleteMovies}
-                    addMoviesWillWatch ={this.addMoviesWillWatch}
-                    deleteMoviesWillWatch = {this.deleteMoviesWillWatch}
+                    deleteMovies={deleteMovies}
+                    addMoviesWillWatch ={addMoviesWillWatch}
+                    deleteMoviesWillWatch = {deleteMoviesWillWatch}
                   />
                 </div>)
             })}
@@ -126,6 +121,6 @@ class Main extends React.Component {
         </div>
       </div>
     )
-  }
+
 }
 export default Main
